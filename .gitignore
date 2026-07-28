@@ -1,0 +1,12 @@
+# 不上传本地账号、cookie、日志和发布产物
+cookies/
+qrcode.png
+*.log
+output/
+*.tmp
+.DS_Store
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
