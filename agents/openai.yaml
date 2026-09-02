@@ -1,4 +1,4 @@
 interface:
   display_name: "全平台矩阵运营"
-  short_description: "用 sau CLI 执行多平台发布、状态记录和故障跳过"
-  default_prompt: "Use $social-matrix-ops to publish this video across my social media matrix and record the result."
+  short_description: "先复用共享 sau 登录态，再执行多平台发布并记录结果"
+  default_prompt: "Use $social-matrix-ops: resolve the shared social-auto-upload runtime and account state first, then publish this media across my social media matrix and record the result."

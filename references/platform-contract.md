@@ -2,21 +2,26 @@
 
 ## CLI 总入口
 
-优先使用：
+优先使用同一个共享项目中的绝对路径：
 
 ```bash
-cd /path/to/social-auto-upload
-.venv-sau312/bin/sau <platform> <action> ...
+SAU_WORKDIR="${SAU_WORKDIR:-$HOME/Documents/Codex/social-auto-upload}"
+SAU_BIN="${SAU_BIN:-$SAU_WORKDIR/.venv-sau312/bin/sau}"
+cd "$SAU_WORKDIR"
+"$SAU_BIN" <platform> <action> ...
 ```
 
-如果当前环境 `sau` 已在 PATH，也可以直接用 `sau`。
+如果 `.venv-sau312` 不存在，再依次尝试 `$SAU_WORKDIR/.venv/bin/sau`、`$SAU_WORKDIR/venv/bin/sau`。`command -v sau` 只能作为最后的 PATH 兜底，不能作为“CLI 是否安装”的唯一判断。
+
+不要因为 Codex 当前 worktree 里出现了另一个 `.venv/bin/sau` 就切换过去；先确认它和用户账号 cookie 位于同一个 `SAU_WORKDIR`。
 
 ## 平台命令
 
 ### 抖音
 
 ```bash
-sau douyin upload-video \
+"$SAU_BIN" douyin check --account douyin-account
+"$SAU_BIN" douyin upload-video \
   --account douyin-account \
   --file <video> \
   --title "<title>" \
@@ -25,10 +30,28 @@ sau douyin upload-video \
   --headless
 ```
 
+如果 `check` 失败，才启动可见登录：
+
+```bash
+"$SAU_BIN" douyin login --account douyin-account --headed
+```
+
+抖音图文/海报不能使用 `upload-video`，应使用：
+
+```bash
+"$SAU_BIN" douyin upload-note \
+  --account douyin-account \
+  --images <image-1> <image-2> \
+  --title "<title>" \
+  --note "<note>" \
+  --tags "tag1,tag2" \
+  --headless
+```
+
 ### 快手
 
 ```bash
-sau kuaishou upload-video \
+"$SAU_BIN" kuaishou upload-video \
   --account kuaishou-account \
   --file <video> \
   --title "<title>" \
@@ -40,7 +63,7 @@ sau kuaishou upload-video \
 ### 视频号
 
 ```bash
-sau tencent upload-video \
+"$SAU_BIN" tencent upload-video \
   --account tencent-account \
   --file <video> \
   --title "<title>" \
@@ -52,7 +75,7 @@ sau tencent upload-video \
 若 cookie 失效：
 
 ```bash
-sau tencent login --account tencent-account --headed
+"$SAU_BIN" tencent login --account tencent-account --headed
 ```
 
 出现二维码时，必须把二维码图片展示给用户扫码。
@@ -60,7 +83,7 @@ sau tencent login --account tencent-account --headed
 ### B站
 
 ```bash
-sau bilibili upload-video \
+"$SAU_BIN" bilibili upload-video \
   --account bilibili-account \
   --file <video> \
   --title "<title>" \
@@ -78,7 +101,7 @@ missing field `cookie_info`
 处理：重新登录 B站。
 
 ```bash
-sau bilibili login --account bilibili-account
+"$SAU_BIN" bilibili login --account bilibili-account
 ```
 
 B站登录通常要求 PTY/交互终端；如果二维码无法完整显示，打开 `qrcode.png` 给用户扫码。
@@ -86,7 +109,7 @@ B站登录通常要求 PTY/交互终端；如果二维码无法完整显示，�
 ### 小红书
 
 ```bash
-sau xiaohongshu upload-video \
+"$SAU_BIN" xiaohongshu upload-video \
   --account xhs-account \
   --file <video> \
   --title "<title>" \

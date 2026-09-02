@@ -53,26 +53,24 @@ git clone https://github.com/<your-github-user>/social-matrix-ops-skill.git ~/.c
 git clone https://github.com/<your-github-user>/social-matrix-ops-skill.git /path/to/skills/social-matrix-ops
 ```
 
-## 前置依赖
+## 前置依赖与运行时定位
 
-本 Skill 默认依赖本机已经安装并配置好的 `social-auto-upload`：
-
-```text
-/path/to/social-auto-upload
-```
-
-默认 CLI 路径：
+本 Skill 依赖本机已经安装并配置好的 `social-auto-upload`。Codex 的 `PATH` 可能没有 `sau`，所以不要只用 `command -v sau` 判断是否安装；脚本会优先寻找用户的共享项目和虚拟环境：
 
 ```text
-/path/to/social-auto-upload/.venv/bin/sau
+$HOME/Documents/Codex/social-auto-upload/.venv-sau312/bin/sau
+$HOME/Documents/Codex/social-auto-upload/.venv/bin/sau
+$HOME/social-auto-upload/.venv/bin/sau
 ```
 
-如果你的路径不同，可以在执行脚本时传入：
+如果你的路径不同，可以在执行脚本时显式传入：
 
 ```bash
 --workdir /your/social-auto-upload/path \
 --sau /your/social-auto-upload/.venv/bin/sau
 ```
+
+`--workdir` 必须和 `--sau` 属于同一个项目，因为账号登录态位于该项目的 `cookies/` 目录。不要使用没有登录态的临时 worktree 副本。
 
 
 ## 配置方式
@@ -91,16 +89,20 @@ export SAU_ACCOUNT_XHS="xhs-account"
 
 也可以在执行脚本时通过 `--account-douyin`、`--account-kuaishou` 等参数覆盖。
 
+如果账号名仍使用示例占位符，脚本会在共享 `cookies/` 中发现且仅发现一个对应平台账号时自动复用它；检测到多个账号时会要求显式传入别名，不会猜账号。
+
 ## 快速使用
 
 发布一个视频文件：
 
 ```bash
-python scripts/publish_matrix.py \
+python3 scripts/publish_matrix.py \
   --input "/absolute/path/to/video.mp4" \
   --title "8个初中英语单词同音记忆动画" \
   --desc "把抽象单词变成小故事，先记画面，再记发音。" \
   --tags "英语学习,初中英语,英语单词,AI教学" \
+  --workdir "$SAU_WORKDIR" \
+  --sau "$SAU_BIN" \
   --platforms douyin,kuaishou,tencent,bilibili \
   --skip xiaohongshu,baijiahao
 ```
@@ -108,12 +110,35 @@ python scripts/publish_matrix.py \
 发布一个素材文件夹：
 
 ```bash
-python scripts/publish_matrix.py \
+python3 scripts/publish_matrix.py \
   --input "/absolute/path/to/material-folder" \
   --title "像看动画一样背单词" \
   --desc "这一组内容适合英语启蒙、课堂导入和词汇复习。" \
   --tags "英语学习,儿童英语,趣味英语" \
+  --workdir "$SAU_WORKDIR" \
+  --sau "$SAU_BIN" \
   --platforms douyin,kuaishou,tencent,bilibili
+```
+
+发布海报或图片时使用图文模式：
+
+```bash
+python3 scripts/publish_matrix.py \
+  --input "/absolute/path/to/poster-folder" \
+  --media-type note \
+  --title "AI 工具体验" \
+  --desc "正文内容" \
+  --tags "AI,效率工具" \
+  --workdir "$SAU_WORKDIR" \
+  --sau "$SAU_BIN" \
+  --platforms douyin,kuaishou,xiaohongshu
+```
+
+先检查解析到的 CLI，不执行发布：
+
+```bash
+python3 scripts/publish_matrix.py --check-runtime \
+  --workdir "$SAU_WORKDIR" --sau "$SAU_BIN"
 ```
 
 当输入是文件夹时，脚本会优先选择文件名包含以下关键词的视频：
@@ -192,12 +217,27 @@ output/
 
 ## 常见问题
 
+### 抖音提示没有 `sau` 或登录失败
+
+先不要重新安装或在当前 worktree 里复制项目。用共享项目的绝对路径检查：
+
+```bash
+"$SAU_BIN" --help
+"$SAU_BIN" douyin check --account "$SAU_ACCOUNT_DOUYIN"
+```
+
+只有 `check` 失败时才重新登录，并使用有头模式完成扫码/短信验证：
+
+```bash
+"$SAU_BIN" douyin login --account "$SAU_ACCOUNT_DOUYIN" --headed
+```
+
 ### B站报 `missing field cookie_info`
 
 说明 B站 cookie 文件格式损坏或过期，需要重新登录：
 
 ```bash
-sau bilibili login --account bilibili-account
+"$SAU_BIN" bilibili login --account bilibili-account
 ```
 
 ### 视频号提示 cookie 失效
@@ -205,7 +245,7 @@ sau bilibili login --account bilibili-account
 重新扫码登录：
 
 ```bash
-sau tencent login --account tencent-account --headed
+"$SAU_BIN" tencent login --account tencent-account --headed
 ```
 
 ### 小红书一直卡在发布中
